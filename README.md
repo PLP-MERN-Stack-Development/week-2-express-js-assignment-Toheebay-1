@@ -46,6 +46,133 @@ The API will have the following endpoints:
 - `POST /api/products`: Create a new product
 - `PUT /api/products/:id`: Update a product
 - `DELETE /api/products/:id`: Delete a product
+/ Apply authentication middleware only to /api/products routes
+app.use('/api/products', authenticate);
+
+// In-memory product list
+let products = [
+  {
+    id: '1',
+    name: 'Laptop',
+    description: 'High-performance laptop with 16GB RAM',
+    price: 1200,
+    category: 'electronics',
+    inStock: true
+  },
+  {
+    id: '2',
+    name: 'Smartphone',
+    description: 'Latest model with 128GB storage',
+    price: 800,
+    category: 'electronics',
+    inStock: true
+  },
+  {
+    id: '3',
+    name: 'Coffee Maker',
+    description: 'Programmable coffee maker with timer',
+    price: 50,
+    category: 'kitchen',
+    inStock: false
+  }
+];
+
+// Root route
+app.get('/', (req, res) => {
+  res.send('Welcome to the Product API! Go to /api/products to see all products.');
+});
+
+// GET /api/products - Get all products (with filters & pagination)
+app.get('/api/products', (req, res) => {
+  const { category, search, page = 1, limit = 10 } = req.query;
+
+  let filtered = [...products];
+
+  if (category) {
+    filtered = filtered.filter(p => p.category.toLowerCase() === category.toLowerCase());
+  }
+
+  if (search) {
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  }
+
+  const start = (parseInt(page) - 1) * parseInt(limit);
+  const paginated = filtered.slice(start, start + parseInt(limit));
+
+  res.json({
+    total: filtered.length,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    products: paginated
+  });
+});
+
+// GET /api/products/:id - Get product by ID
+app.get('/api/products/:id', (req, res) => {
+  const product = products.find(p => p.id === req.params.id);
+  if (!product) {
+    return res.status(404).json({ message: 'Product not found' });
+  }
+  res.json(product);
+});
+
+// POST /api/products - Create a new product
+app.post('/api/products', (req, res) => {
+  const { name, description, price, category, inStock } = req.body;
+
+  if (!name || !description || !price || !category || typeof inStock !== 'boolean') {
+    return res.status(400).json({ message: 'Invalid product data' });
+  }
+
+  const newProduct = {
+    id: uuidv4(),
+    name,
+    description,
+    price,
+    category,
+    inStock
+  };
+
+  products.push(newProduct);
+  res.status(201).json(newProduct);
+});
+
+// PUT /api/products/:id - Update product
+app.put('/api/products/:id', (req, res) => {
+  const { name, description, price, category, inStock } = req.body;
+  const index = products.findIndex(p => p.id === req.params.id);
+
+  if (index === -1) {
+    return res.status(404).json({ message: 'Product not found' });
+  }
+
+  if (!name || !description || !price || !category || typeof inStock !== 'boolean') {
+    return res.status(400).json({ message: 'Invalid product data' });
+  }
+
+  products[index] = {
+    id: products[index].id,
+    name,
+    description,
+    price,
+    category,
+    inStock
+  };
+
+  res.json(products[index]);
+});
+
+// DELETE /api/products/:id - Delete product
+app.delete('/api/products/:id', (req, res) => {
+  const index = products.findIndex(p => p.id === req.params.id);
+
+  if (index === -1) {
+    return res.status(404).json({ message: 'Product not found' });
+  }
+
+  const deletedProduct = products.splice(index, 1);
+  res.json({ message: 'Product deleted', product: deletedProduct[0] });
+});
 
 ## Submission
 
@@ -60,4 +187,6 @@ Your work will be automatically submitted when you push to your GitHub Classroom
 
 - [Express.js Documentation](https://expressjs.com/)
 - [RESTful API Design Best Practices](https://restfulapi.net/)
+
+- PROUDLY POWERED BY ADEBAYO TOHEEB KOLAWOLE GROUP 154.
 - [HTTP Status Codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) 
